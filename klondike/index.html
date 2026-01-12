@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>프리셀 (FreeCell)</title>
+    <title>클론다이크 (Klondike)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
         <header class="game-header">
             <a href="../index.html" class="back-btn">← 게임 선택</a>
-            <h1>프리셀</h1>
+            <h1>클론다이크</h1>
             <div class="game-info">
                 <div class="timer">
                     <span id="timer">00:00</span>
@@ -22,18 +22,17 @@
             <div class="game-controls">
                 <button id="newGameBtn">새 게임</button>
                 <button id="undoBtn">실행취소</button>
-                <button id="autoCompleteBtn">자동완성</button>
             </div>
         </header>
 
         <main class="game-board">
-            <!-- 상단 영역: 프리셀 4개 + 파운데이션 4개 -->
+            <!-- 상단 영역: Stock, Waste, 파운데이션 4개 -->
             <div class="top-area">
-                <div class="freecells">
-                    <div class="cell freecell" data-cell="0"></div>
-                    <div class="cell freecell" data-cell="1"></div>
-                    <div class="cell freecell" data-cell="2"></div>
-                    <div class="cell freecell" data-cell="3"></div>
+                <div class="stock-waste">
+                    <div class="stock" id="stock">
+                        <div class="card-back"></div>
+                    </div>
+                    <div class="waste" id="waste"></div>
                 </div>
                 <div class="foundations">
                     <div class="cell foundation" data-foundation="0" data-suit="spades">♠</div>
@@ -43,16 +42,15 @@
                 </div>
             </div>
 
-            <!-- 하단 영역: 캐스케이드 8개 -->
-            <div class="cascades">
-                <div class="cascade" data-cascade="0"></div>
-                <div class="cascade" data-cascade="1"></div>
-                <div class="cascade" data-cascade="2"></div>
-                <div class="cascade" data-cascade="3"></div>
-                <div class="cascade" data-cascade="4"></div>
-                <div class="cascade" data-cascade="5"></div>
-                <div class="cascade" data-cascade="6"></div>
-                <div class="cascade" data-cascade="7"></div>
+            <!-- 하단 영역: 테이블로(Tableau) 7개 -->
+            <div class="tableaus">
+                <div class="tableau" data-tableau="0"></div>
+                <div class="tableau" data-tableau="1"></div>
+                <div class="tableau" data-tableau="2"></div>
+                <div class="tableau" data-tableau="3"></div>
+                <div class="tableau" data-tableau="4"></div>
+                <div class="tableau" data-tableau="5"></div>
+                <div class="tableau" data-tableau="6"></div>
             </div>
         </main>
 
