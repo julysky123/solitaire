@@ -78,10 +78,8 @@ git push -u origin feature/user-login
 - 커밋: `abc1234`
 - Push: 완료
 
-### 다음 단계 (사람이 진행)
-1. GitHub에서 PR 생성
-2. 코드 리뷰 진행
-3. 승인 후 merge
+### 다음 단계
+→ [8단계: PR 생성](./08-pull-request.md)으로 진행
 ```
 
 ## 커밋하지 않을 것
@@ -100,19 +98,11 @@ git push -u origin feature/user-login
 - [ ] Push가 성공했는가?
 - [ ] 완료 보고를 작성했는가?
 
-## 다음 단계 안내
+## 다음 단계
 
-```
-⚠️ Merge는 사람이 직접 진행합니다.
-
-Push 완료 후:
-1. GitHub/GitLab에서 PR/MR 생성
-2. 코드 리뷰 진행
-3. 승인 후 merge
-```
+Push 완료 후 → [8단계: PR 생성](./08-pull-request.md)으로 진행
 
 ## 주의사항
 
-- **merge 금지** - merge는 항상 사람이 직접
 - **force push 금지** - 히스토리 변경 금지
 - **master/main 직접 push 금지** - 항상 feature 브랜치 사용
