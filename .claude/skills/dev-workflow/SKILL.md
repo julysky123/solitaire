@@ -49,3 +49,16 @@ user-invocable: true
 3. **안전 우선** - 보안 취약점 주의, 기존 기능 보호
 4. **투명성** - 진행 상황을 todo로 명확히 공유
 5. **Merge는 사람이** - PR 생성까지만, merge는 사용자가 직접
+
+## Git 규칙
+
+### Merge 전략
+- master로 merge 시 **항상 squash merge** 사용
+- `git merge --squash feature/브랜치명`
+- merge 후 feature 브랜치 삭제 (local + remote)
+
+### 브랜치 삭제
+```bash
+git branch -d feature/브랜치명           # 로컬 삭제
+git push origin --delete feature/브랜치명  # 원격 삭제
+```

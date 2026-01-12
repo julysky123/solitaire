@@ -1,0 +1,12 @@
+# Claude Code temp files
+tmpclaude-*
+
+# Local settings
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if used)
+node_modules/
