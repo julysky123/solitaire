@@ -1,0 +1,308 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a5c1a 0%, #0d3d0d 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.game-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 헤더 */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.game-header h1 {
+    font-size: 1.8rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-info {
+    display: flex;
+    gap: 30px;
+    font-size: 1.2rem;
+}
+
+.game-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.game-controls button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#newGameBtn {
+    background: #4CAF50;
+    color: white;
+}
+
+#undoBtn {
+    background: #FF9800;
+    color: white;
+}
+
+#autoCompleteBtn {
+    background: #2196F3;
+    color: white;
+}
+
+.game-controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.game-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 게임 보드 */
+.game-board {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+/* 상단 영역 */
+.top-area {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.freecells, .foundations {
+    display: flex;
+    gap: 10px;
+}
+
+/* 셀 공통 스타일 */
+.cell {
+    width: 100px;
+    height: 140px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.foundation {
+    position: relative;
+}
+
+.foundation[data-suit="hearts"],
+.foundation[data-suit="diamonds"] {
+    color: rgba(255, 100, 100, 0.3);
+}
+
+/* 캐스케이드 영역 */
+.cascades {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.cascade {
+    width: 100px;
+    min-height: 300px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 5px;
+    position: relative;
+}
+
+/* 카드 스타일 */
+.card {
+    width: 90px;
+    height: 130px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    position: absolute;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+.card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.card.selected {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.card.dragging {
+    opacity: 0.8;
+    z-index: 1000;
+    cursor: grabbing;
+}
+
+.card.red {
+    color: #d32f2f;
+}
+
+.card.black {
+    color: #212121;
+}
+
+.card-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-weight: bold;
+}
+
+.card-corner.top-left {
+    align-self: flex-start;
+}
+
+.card-corner.bottom-right {
+    align-self: flex-end;
+    transform: rotate(180deg);
+}
+
+.card-rank {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.card-suit {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.card-center {
+    font-size: 2.5rem;
+    text-align: center;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 캐스케이드 내 카드 배치 */
+.cascade .card {
+    left: 5px;
+}
+
+/* 셀 내 카드 */
+.cell .card {
+    position: relative;
+    left: auto;
+    top: auto;
+}
+
+/* 하이라이트 */
+.cell.highlight,
+.cascade.highlight {
+    background: rgba(255, 255, 0, 0.2);
+    border-color: yellow;
+}
+
+/* 모달 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    color: #333;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h2 {
+    color: #4CAF50;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.modal-content p {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+#playAgainBtn {
+    margin-top: 20px;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#playAgainBtn:hover {
+    background: #45a049;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+    .cell {
+        width: 80px;
+        height: 112px;
+    }
+
+    .cascade {
+        width: 80px;
+    }
+
+    .card {
+        width: 72px;
+        height: 104px;
+    }
+
+    .game-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
