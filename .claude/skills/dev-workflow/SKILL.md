@@ -19,7 +19,8 @@ user-invocable: true
 5. 클린업        →  불필요한 코드 제거
 6. 문서          →  필요한 경우에만 업데이트
 7. 커밋 & Push   →  변경사항 커밋 후 원격에 Push
-8. PR 생성       →  GitHub PR 생성 (merge는 사람이)
+8. PR 생성       →  GitHub PR 생성
+9. 리뷰 대응     →  변경요청 시 수정 후 재push (반복) → 승인되면 완료
 ```
 
 ## 상세 가이드
@@ -34,6 +35,7 @@ user-invocable: true
 - [6단계: 문서 업데이트](./steps/06-documentation.md)
 - [7단계: 커밋 & Push](./steps/07-commit.md)
 - [8단계: PR 생성](./steps/08-pull-request.md)
+- [9단계: 리뷰 대응](./steps/09-review-response.md)
 
 ## 템플릿
 
