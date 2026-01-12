@@ -90,6 +90,9 @@ class FreeCell {
         this.updateUI();
         this.updateMoves();
         this.startTimer();
+
+        // 게임 시작 시 안전한 카드 자동 이동
+        this.autoMoveSafeCards();
     }
 
     /**
@@ -367,7 +370,8 @@ class FreeCell {
             // 이동 성공
             this.moves++;
             this.updateMoves();
-            this.checkWin();
+            // 안전한 카드 자동 이동 후 승리 확인
+            this.autoMoveSafeCards();
         }
 
         // 드래그 정리 및 UI 업데이트
@@ -683,6 +687,37 @@ class FreeCell {
     }
 
     /**
+     * 카드를 파운데이션에 자동으로 옮겨도 안전한지 확인
+     * 안전 조건: 카드의 rank가 반대색 파운데이션들의 최소 rank + 2 이하
+     * (즉, 해당 카드 아래에 다른 카드를 놓을 필요가 없는 경우)
+     */
+    isSafeToAutoMove(card) {
+        // A는 항상 안전
+        if (card.rank === 0) return true;
+
+        // 2도 항상 안전 (A 위에만 올라가므로)
+        if (card.rank === 1) return true;
+
+        // 반대색 파운데이션들의 최소 rank 찾기
+        const isCardRed = this.isRed(card);
+        let minOppositeRank = 13; // 최대값으로 초기화
+
+        for (const suit of this.SUITS) {
+            const isFoundationRed = (suit === 'hearts' || suit === 'diamonds');
+            if (isCardRed !== isFoundationRed) {
+                // 반대색 파운데이션
+                const foundation = this.foundations[suit];
+                const topRank = foundation.length > 0 ? foundation[foundation.length - 1].rank : -1;
+                minOppositeRank = Math.min(minOppositeRank, topRank);
+            }
+        }
+
+        // 카드의 rank가 반대색 최소 rank + 2 이하면 안전
+        // 예: 반대색이 2까지 쌓여있으면 (rank=1), 이 카드는 rank 3 (4카드)까지 안전
+        return card.rank <= minOppositeRank + 2;
+    }
+
+    /**
      * 캐스케이드 이동 가능 여부
      */
     canMoveToCascade(card, targetIndex) {
@@ -742,6 +777,51 @@ class FreeCell {
 
         this.updateUI();
         this.updateMoves();
+    }
+
+    /**
+     * 안전한 카드들을 자동으로 파운데이션에 이동
+     * 매 이동 후 호출되어 trivial한 이동을 자동 처리
+     */
+    autoMoveSafeCards() {
+        let moved = true;
+
+        while (moved) {
+            moved = false;
+
+            // 프리셀에서 안전한 카드 찾기
+            for (let i = 0; i < 4; i++) {
+                const card = this.freeCells[i];
+                if (card && this.canMoveToFoundation(card, card.suit) && this.isSafeToAutoMove(card)) {
+                    const prevState = this.saveState();
+                    this.freeCells[i] = null;
+                    this.foundations[card.suit].push(card);
+                    this.history.push(prevState);
+                    this.moves++;
+                    moved = true;
+                }
+            }
+
+            // 캐스케이드에서 안전한 카드 찾기
+            for (let i = 0; i < 8; i++) {
+                const cascade = this.cascades[i];
+                if (cascade.length > 0) {
+                    const card = cascade[cascade.length - 1];
+                    if (this.canMoveToFoundation(card, card.suit) && this.isSafeToAutoMove(card)) {
+                        const prevState = this.saveState();
+                        cascade.pop();
+                        this.foundations[card.suit].push(card);
+                        this.history.push(prevState);
+                        this.moves++;
+                        moved = true;
+                    }
+                }
+            }
+        }
+
+        this.updateUI();
+        this.updateMoves();
+        this.checkWin();
     }
 
     /**
