@@ -20,11 +20,12 @@ class FreeCell {
 
         // 드래그 상태
         this.isDragging = false;
-        this.draggedCard = null;      // 드래그 중인 카드 데이터
+        this.draggedCards = [];       // 드래그 중인 카드들 (다중 카드 지원)
         this.draggedSource = null;    // 드래그 시작 위치 정보
-        this.dragElement = null;      // 드래그용 임시 DOM 요소
+        this.dragElements = [];       // 드래그용 임시 DOM 요소들
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
+        this.originalCardEls = [];    // 원본 카드 요소들
 
         // DOM 요소
         this.timerEl = document.getElementById('timer');
@@ -122,6 +123,60 @@ class FreeCell {
     }
 
     /**
+     * 빈 프리셀 개수
+     */
+    getEmptyFreeCellCount() {
+        return this.freeCells.filter(c => c === null).length;
+    }
+
+    /**
+     * 빈 캐스케이드 개수
+     */
+    getEmptyCascadeCount() {
+        return this.cascades.filter(c => c.length === 0).length;
+    }
+
+    /**
+     * 최대 이동 가능 카드 수 (슈퍼무브)
+     * 공식: (빈 프리셀 + 1) * 2^(빈 캐스케이드) 또는 간단히 (빈 프리셀 + 1) * (빈 캐스케이드 + 1)
+     */
+    getMaxMovableCards(toEmptyCascade = false) {
+        const emptyFreeCells = this.getEmptyFreeCellCount();
+        // 빈 캐스케이드로 이동할 때는 해당 캐스케이드 제외
+        const emptyCascades = this.getEmptyCascadeCount() - (toEmptyCascade ? 1 : 0);
+        return (emptyFreeCells + 1) * (emptyCascades + 1);
+    }
+
+    /**
+     * 카드 시퀀스가 유효한지 확인 (색 교대, 내림차순)
+     */
+    isValidSequence(cards) {
+        if (cards.length <= 1) return true;
+
+        for (let i = 0; i < cards.length - 1; i++) {
+            const current = cards[i];
+            const next = cards[i + 1];
+            // 색이 달라야 하고, 순서가 1씩 내려가야 함
+            if (this.isRed(current) === this.isRed(next)) return false;
+            if (current.rank !== next.rank + 1) return false;
+        }
+        return true;
+    }
+
+    /**
+     * 캐스케이드에서 특정 위치부터 끝까지의 유효한 시퀀스 가져오기
+     */
+    getSequenceFromIndex(cascadeIndex, cardIndex) {
+        const cascade = this.cascades[cascadeIndex];
+        const sequence = cascade.slice(cardIndex);
+
+        if (this.isValidSequence(sequence)) {
+            return sequence;
+        }
+        return null;
+    }
+
+    /**
      * 카드 HTML 생성
      */
     createCardElement(card, top = 0) {
@@ -198,35 +253,73 @@ class FreeCell {
         const source = this.getCardSourceFromParent(parent, cardEl);
         if (!source) return;
 
-        // 이동 가능한 카드인지 확인
-        if (!this.canSelectCard(source)) return;
+        // 이동 가능한 카드들 가져오기
+        const movableCards = this.getMovableCards(source);
+        if (!movableCards || movableCards.length === 0) return;
 
         // 드래그 시작
         this.isDragging = true;
-        this.draggedCard = this.getCardFromSource(source);
+        this.draggedCards = movableCards;
         this.draggedSource = source;
 
-        // 드래그용 임시 요소 생성
+        // 드래그용 임시 요소들 생성
         const rect = cardEl.getBoundingClientRect();
         this.dragOffsetX = e.clientX - rect.left;
         this.dragOffsetY = e.clientY - rect.top;
 
-        this.dragElement = this.createCardElement(this.draggedCard);
-        this.dragElement.classList.add('dragging');
-        this.dragElement.style.position = 'fixed';
-        this.dragElement.style.left = `${e.clientX - this.dragOffsetX}px`;
-        this.dragElement.style.top = `${e.clientY - this.dragOffsetY}px`;
-        this.dragElement.style.zIndex = '1000';
-        this.dragElement.style.pointerEvents = 'none';
-        document.body.appendChild(this.dragElement);
+        // 여러 카드를 쌓아서 표시
+        this.dragElements = [];
+        this.originalCardEls = [];
 
-        // 원본 카드 반투명 처리
-        cardEl.style.opacity = '0.3';
-        this.originalCardEl = cardEl;
+        movableCards.forEach((card, index) => {
+            const dragEl = this.createCardElement(card, index * 25);
+            dragEl.classList.add('dragging');
+            dragEl.style.position = 'fixed';
+            dragEl.style.left = `${e.clientX - this.dragOffsetX}px`;
+            dragEl.style.top = `${e.clientY - this.dragOffsetY + index * 25}px`;
+            dragEl.style.zIndex = `${1000 + index}`;
+            dragEl.style.pointerEvents = 'none';
+            document.body.appendChild(dragEl);
+            this.dragElements.push(dragEl);
+        });
+
+        // 원본 카드들 반투명 처리
+        if (source.type === 'cascade') {
+            const cascadeEl = parent;
+            const cardEls = Array.from(cascadeEl.children);
+            for (let i = source.cardIndex; i < cardEls.length; i++) {
+                cardEls[i].style.opacity = '0.3';
+                this.originalCardEls.push(cardEls[i]);
+            }
+        } else {
+            cardEl.style.opacity = '0.3';
+            this.originalCardEls.push(cardEl);
+        }
 
         this.highlightValidTargets();
 
         e.preventDefault();
+    }
+
+    /**
+     * 이동 가능한 카드들 가져오기
+     */
+    getMovableCards(source) {
+        if (source.type === 'freecell') {
+            const card = this.freeCells[source.index];
+            return card ? [card] : null;
+        }
+
+        if (source.type === 'foundation') {
+            return null; // 파운데이션에서는 가져올 수 없음
+        }
+
+        if (source.type === 'cascade') {
+            const sequence = this.getSequenceFromIndex(source.index, source.cardIndex);
+            return sequence;
+        }
+
+        return null;
     }
 
     /**
@@ -251,10 +344,12 @@ class FreeCell {
      * 마우스 이동 핸들러
      */
     handleMouseMove(e) {
-        if (!this.isDragging || !this.dragElement) return;
+        if (!this.isDragging || this.dragElements.length === 0) return;
 
-        this.dragElement.style.left = `${e.clientX - this.dragOffsetX}px`;
-        this.dragElement.style.top = `${e.clientY - this.dragOffsetY}px`;
+        this.dragElements.forEach((dragEl, index) => {
+            dragEl.style.left = `${e.clientX - this.dragOffsetX}px`;
+            dragEl.style.top = `${e.clientY - this.dragOffsetY + index * 25}px`;
+        });
     }
 
     /**
@@ -268,7 +363,7 @@ class FreeCell {
         // 드롭 대상 찾기 (스냅 기능 포함)
         const dropTarget = this.findDropTargetWithSnap(e.clientX, e.clientY);
 
-        if (dropTarget && this.tryMove(this.draggedSource, dropTarget)) {
+        if (dropTarget && this.tryMove(this.draggedSource, dropTarget, this.draggedCards)) {
             // 이동 성공
             this.moves++;
             this.updateMoves();
@@ -294,22 +389,26 @@ class FreeCell {
      * 드래그 정리
      */
     cleanupDrag() {
-        // 드래그 요소 제거
-        if (this.dragElement && this.dragElement.parentNode) {
-            this.dragElement.parentNode.removeChild(this.dragElement);
-        }
+        // 드래그 요소들 제거
+        this.dragElements.forEach(dragEl => {
+            if (dragEl && dragEl.parentNode) {
+                dragEl.parentNode.removeChild(dragEl);
+            }
+        });
 
-        // 원본 카드 복원
-        if (this.originalCardEl) {
-            this.originalCardEl.style.opacity = '';
-        }
+        // 원본 카드들 복원
+        this.originalCardEls.forEach(cardEl => {
+            if (cardEl) {
+                cardEl.style.opacity = '';
+            }
+        });
 
         // 상태 초기화
         this.isDragging = false;
-        this.draggedCard = null;
+        this.draggedCards = [];
         this.draggedSource = null;
-        this.dragElement = null;
-        this.originalCardEl = null;
+        this.dragElements = [];
+        this.originalCardEls = [];
     }
 
     /**
@@ -328,48 +427,46 @@ class FreeCell {
         return null;
     }
 
-    /**
-     * 카드 선택 가능 여부
-     */
-    canSelectCard(source) {
-        if (source.type === 'freecell') {
-            return this.freeCells[source.index] !== null;
-        }
-        if (source.type === 'foundation') {
-            return false; // 파운데이션에서는 가져올 수 없음
-        }
-        if (source.type === 'cascade') {
-            const cascade = this.cascades[source.index];
-            // 맨 아래 카드만 이동 가능 (단일 카드 이동)
-            return source.cardIndex === cascade.length - 1;
-        }
-        return false;
-    }
 
     /**
      * 유효한 이동 대상 하이라이트
      */
     highlightValidTargets() {
-        if (!this.draggedCard) return;
+        if (!this.draggedCards || this.draggedCards.length === 0) return;
 
-        // 프리셀 하이라이트
-        document.querySelectorAll('.freecell').forEach((cell, i) => {
-            if (this.freeCells[i] === null) {
-                cell.classList.add('highlight');
-            }
-        });
+        const topCard = this.draggedCards[0]; // 이동할 카드들 중 맨 위 카드
+        const cardCount = this.draggedCards.length;
 
-        // 파운데이션 하이라이트
-        document.querySelectorAll('.foundation').forEach((cell) => {
-            const suit = cell.dataset.suit;
-            if (this.canMoveToFoundation(this.draggedCard, suit)) {
-                cell.classList.add('highlight');
-            }
-        });
+        // 프리셀 하이라이트 (단일 카드만)
+        if (cardCount === 1) {
+            document.querySelectorAll('.freecell').forEach((cell, i) => {
+                if (this.freeCells[i] === null) {
+                    cell.classList.add('highlight');
+                }
+            });
+        }
+
+        // 파운데이션 하이라이트 (단일 카드만)
+        if (cardCount === 1) {
+            document.querySelectorAll('.foundation').forEach((cell) => {
+                const suit = cell.dataset.suit;
+                if (this.canMoveToFoundation(topCard, suit)) {
+                    cell.classList.add('highlight');
+                }
+            });
+        }
 
         // 캐스케이드 하이라이트
         document.querySelectorAll('.cascade').forEach((cascade, i) => {
-            if (this.canMoveToCascade(this.draggedCard, i)) {
+            // 같은 캐스케이드면 스킵
+            if (this.draggedSource.type === 'cascade' && this.draggedSource.index === i) return;
+
+            const targetCascade = this.cascades[i];
+            const toEmpty = targetCascade.length === 0;
+            const maxMovable = this.getMaxMovableCards(toEmpty);
+
+            // 카드 수가 이동 가능 수 이하이고, 타겟에 놓을 수 있으면 하이라이트
+            if (cardCount <= maxMovable && this.canMoveToCascade(topCard, i)) {
                 cascade.classList.add('highlight');
             }
         });
@@ -386,19 +483,18 @@ class FreeCell {
      * 드롭 대상 찾기 (스냅 기능 포함)
      */
     findDropTargetWithSnap(x, y) {
-        // 드래그 요소 임시 숨김
-        if (this.dragElement) {
-            this.dragElement.style.display = 'none';
-        }
+        // 드래그 요소들 임시 숨김
+        this.dragElements.forEach(el => {
+            if (el) el.style.display = 'none';
+        });
 
         // 먼저 정확한 위치 확인
         let target = this.getTargetAtPoint(x, y);
 
         // 정확한 위치에 없으면 주변 검색 (스냅)
-        if (!target) {
+        if (!target || !this.isValidTarget(target)) {
             const snapDistance = 60; // 스냅 거리 (픽셀)
             const offsets = [
-                [0, 0],
                 [-snapDistance, 0], [snapDistance, 0],
                 [0, -snapDistance], [0, snapDistance],
                 [-snapDistance, -snapDistance], [snapDistance, -snapDistance],
@@ -406,17 +502,18 @@ class FreeCell {
             ];
 
             for (const [dx, dy] of offsets) {
-                target = this.getTargetAtPoint(x + dx, y + dy);
-                if (target && this.isValidTarget(target)) {
+                const candidate = this.getTargetAtPoint(x + dx, y + dy);
+                if (candidate && this.isValidTarget(candidate)) {
+                    target = candidate;
                     break;
                 }
-                target = null;
             }
         }
 
-        if (this.dragElement) {
-            this.dragElement.style.display = '';
-        }
+        // 드래그 요소들 다시 표시
+        this.dragElements.forEach(el => {
+            if (el) el.style.display = '';
+        });
 
         return target;
     }
@@ -453,15 +550,25 @@ class FreeCell {
      * 유효한 이동 대상인지 확인
      */
     isValidTarget(target) {
-        if (!this.draggedCard) return false;
+        if (!this.draggedCards || this.draggedCards.length === 0) return false;
+
+        const topCard = this.draggedCards[0];
+        const cardCount = this.draggedCards.length;
 
         switch (target.type) {
             case 'freecell':
-                return this.freeCells[target.index] === null;
+                return cardCount === 1 && this.freeCells[target.index] === null;
             case 'foundation':
-                return this.canMoveToFoundation(this.draggedCard, target.suit);
+                return cardCount === 1 && this.canMoveToFoundation(topCard, target.suit);
             case 'cascade':
-                return this.canMoveToCascade(this.draggedCard, target.index);
+                // 같은 캐스케이드면 무효
+                if (this.draggedSource.type === 'cascade' && this.draggedSource.index === target.index) {
+                    return false;
+                }
+                const targetCascade = this.cascades[target.index];
+                const toEmpty = targetCascade.length === 0;
+                const maxMovable = this.getMaxMovableCards(toEmpty);
+                return cardCount <= maxMovable && this.canMoveToCascade(topCard, target.index);
         }
         return false;
     }
@@ -469,11 +576,8 @@ class FreeCell {
     /**
      * 이동 시도
      */
-    tryMove(source, target) {
-        if (!source || !target) return false;
-
-        const card = this.getCardFromSource(source);
-        if (!card) return false;
+    tryMove(source, target, cards) {
+        if (!source || !target || !cards || cards.length === 0) return false;
 
         // 같은 위치면 무시
         if (source.type === target.type) {
@@ -489,13 +593,17 @@ class FreeCell {
         // 대상별 이동 로직
         switch (target.type) {
             case 'freecell':
-                success = this.moveToFreeCell(source, target.index);
+                if (cards.length === 1) {
+                    success = this.moveToFreeCell(source, target.index);
+                }
                 break;
             case 'foundation':
-                success = this.moveToFoundation(source, target.suit);
+                if (cards.length === 1) {
+                    success = this.moveToFoundation(source, target.suit);
+                }
                 break;
             case 'cascade':
-                success = this.moveToCascade(source, target.index);
+                success = this.moveToCascade(source, target.index, cards);
                 break;
         }
 
@@ -533,15 +641,31 @@ class FreeCell {
     }
 
     /**
-     * 캐스케이드로 이동
+     * 캐스케이드로 이동 (다중 카드 지원)
      */
-    moveToCascade(source, targetIndex) {
-        const card = this.getCardFromSource(source);
-        if (!card) return false;
-        if (!this.canMoveToCascade(card, targetIndex)) return false;
+    moveToCascade(source, targetIndex, cards) {
+        if (!cards || cards.length === 0) return false;
 
-        this.removeCardFromSource(source);
-        this.cascades[targetIndex].push(card);
+        const topCard = cards[0];
+        if (!this.canMoveToCascade(topCard, targetIndex)) return false;
+
+        // 이동 가능 수 확인
+        const targetCascade = this.cascades[targetIndex];
+        const toEmpty = targetCascade.length === 0;
+        const maxMovable = this.getMaxMovableCards(toEmpty);
+        if (cards.length > maxMovable) return false;
+
+        // 소스에서 카드들 제거
+        if (source.type === 'cascade') {
+            // 캐스케이드에서 여러 카드 제거
+            this.cascades[source.index].splice(source.cardIndex, cards.length);
+        } else {
+            // 프리셀에서 단일 카드 제거
+            this.removeCardFromSource(source);
+        }
+
+        // 타겟 캐스케이드에 카드들 추가
+        this.cascades[targetIndex].push(...cards);
         return true;
     }
 
