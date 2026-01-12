@@ -1,8 +1,8 @@
-# 7단계: 커밋 및 완료
+# 7단계: 커밋 & Push
 
 ## 목표
 
-변경사항을 커밋하고, 작업 완료를 보고합니다.
+변경사항을 커밋하고, 원격 저장소에 Push합니다.
 
 ## 수행 절차
 
@@ -41,7 +41,19 @@ git commit -m "feat: 사용자 로그인 기능 추가
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
 
-### 4. 완료 보고
+### 4. Push
+
+```bash
+# feature 브랜치를 원격에 push
+git push -u origin feature/[브랜치명]
+```
+
+**예시:**
+```bash
+git push -u origin feature/user-login
+```
+
+### 5. 완료 보고
 
 사용자에게 다음 정보를 제공합니다:
 
@@ -61,10 +73,15 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - 기존 테스트: 통과 (15/15)
 - 수동 테스트: 정상 동작 확인
 
-### 다음 단계
-1. 코드 리뷰 진행
-2. `git push origin feature/user-login`
-3. PR 생성 후 merge (사람이 진행)
+### Git 상태
+- 브랜치: `feature/user-login`
+- 커밋: `abc1234`
+- Push: 완료
+
+### 다음 단계 (사람이 진행)
+1. GitHub에서 PR 생성
+2. 코드 리뷰 진행
+3. 승인 후 merge
 ```
 
 ## 커밋하지 않을 것
@@ -80,6 +97,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - [ ] 커밋 메시지가 명확한가?
 - [ ] 민감한 정보가 포함되지 않았는가?
 - [ ] Co-Authored-By가 포함되었는가?
+- [ ] Push가 성공했는가?
 - [ ] 완료 보고를 작성했는가?
 
 ## 다음 단계 안내
@@ -87,15 +105,14 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
 ⚠️ Merge는 사람이 직접 진행합니다.
 
-다음 단계:
-1. git push origin feature/[브랜치명]
-2. GitHub/GitLab에서 PR/MR 생성
-3. 코드 리뷰 진행
-4. 승인 후 merge
+Push 완료 후:
+1. GitHub/GitLab에서 PR/MR 생성
+2. 코드 리뷰 진행
+3. 승인 후 merge
 ```
 
 ## 주의사항
 
-- **push는 요청 시에만** - 자동으로 push하지 않음
 - **merge 금지** - merge는 항상 사람이 직접
 - **force push 금지** - 히스토리 변경 금지
+- **master/main 직접 push 금지** - 항상 feature 브랜치 사용

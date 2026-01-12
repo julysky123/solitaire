@@ -1,6 +1,6 @@
 ---
 name: dev-workflow
-description: 실무 개발 워크플로우를 자동화합니다. 요구사항 정제 → 개발 → 테스트 → 클린&리팩토링 → 문서 업데이트 → Git feature branch 생성까지 수행합니다. "/feature [기능설명]" 또는 "/dev [기능설명]" 형태로 사용하세요.
+description: 실무 개발 워크플로우를 자동화합니다. 요구사항 정제 → 개발 → 테스트 → 클린&리팩토링 → 문서 업데이트 → Git feature branch 생성 → Push까지 수행합니다. "/feature [기능설명]" 또는 "/dev [기능설명]" 형태로 사용하세요.
 allowed-tools: AskUserQuestion, Bash, Read, Write, Edit, Glob, Grep, TodoWrite, Task
 user-invocable: true
 ---
@@ -18,7 +18,7 @@ user-invocable: true
 4. 테스트        →  기존 테스트 실행 + 필요시 추가
 5. 클린업        →  불필요한 코드 제거
 6. 문서          →  필요한 경우에만 업데이트
-7. 커밋          →  변경사항 커밋 후 완료 보고
+7. 커밋 & Push   →  변경사항 커밋 후 원격에 Push
 ```
 
 ## 상세 가이드
@@ -31,7 +31,7 @@ user-invocable: true
 - [4단계: 테스트](./steps/04-testing.md)
 - [5단계: 클린업 & 리팩토링](./steps/05-cleanup.md)
 - [6단계: 문서 업데이트](./steps/06-documentation.md)
-- [7단계: 커밋 및 완료](./steps/07-commit.md)
+- [7단계: 커밋 & Push](./steps/07-commit.md)
 
 ## 템플릿
 
@@ -44,4 +44,4 @@ user-invocable: true
 2. **최소 변경** - 요청한 것만 구현, 과도한 개선 금지
 3. **안전 우선** - 보안 취약점 주의, 기존 기능 보호
 4. **투명성** - 진행 상황을 todo로 명확히 공유
-5. **Merge는 사람이** - 브랜치와 커밋까지만, merge는 사용자가 직접
+5. **Merge는 사람이** - Push까지만, merge는 사용자가 직접
