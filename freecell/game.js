@@ -17,9 +17,14 @@ class FreeCell {
         this.moves = 0;
         this.timerInterval = null;
         this.seconds = 0;
-        this.selectedCard = null;
-        this.selectedSource = null;
+
+        // 드래그 상태
         this.isDragging = false;
+        this.draggedCard = null;      // 드래그 중인 카드 데이터
+        this.draggedSource = null;    // 드래그 시작 위치 정보
+        this.dragElement = null;      // 드래그용 임시 DOM 요소
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
 
         // DOM 요소
         this.timerEl = document.getElementById('timer');
@@ -51,12 +56,18 @@ class FreeCell {
         document.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+
+        // 드래그 중 페이지 벗어나면 취소
+        document.addEventListener('mouseleave', () => this.cancelDrag());
     }
 
     /**
      * 새 게임 시작
      */
     newGame() {
+        // 드래그 취소
+        this.cancelDrag();
+
         // 상태 초기화
         this.freeCells = [null, null, null, null];
         this.foundations = { spades: [], hearts: [], diamonds: [], clubs: [] };
@@ -64,15 +75,12 @@ class FreeCell {
         this.history = [];
         this.moves = 0;
         this.seconds = 0;
-        this.selectedCard = null;
-        this.selectedSource = null;
 
         // 덱 생성 및 셔플
         const deck = this.createDeck();
         this.shuffle(deck);
 
         // 캐스케이드에 카드 배분
-        let cardIndex = 0;
         for (let i = 0; i < 52; i++) {
             this.cascades[i % 8].push(deck[i]);
         }
@@ -178,95 +186,53 @@ class FreeCell {
      * 마우스 다운 핸들러
      */
     handleMouseDown(e) {
-        const cardEl = e.target.closest('.card');
-        if (!cardEl) {
-            this.clearSelection();
-            return;
-        }
+        if (this.isDragging) return;
 
-        const source = this.getCardSource(cardEl);
+        const cardEl = e.target.closest('.card');
+        if (!cardEl) return;
+
+        const parent = cardEl.parentElement;
+        if (!parent) return;
+
+        // 소스 정보 추출
+        const source = this.getCardSourceFromParent(parent, cardEl);
         if (!source) return;
 
         // 이동 가능한 카드인지 확인
-        if (!this.canSelectCard(source)) {
-            return;
-        }
-
-        this.selectedCard = this.getCardFromSource(source);
-        this.selectedSource = source;
-        cardEl.classList.add('selected');
+        if (!this.canSelectCard(source)) return;
 
         // 드래그 시작
         this.isDragging = true;
-        this.draggedElement = cardEl;
-        this.dragOffsetX = e.clientX - cardEl.getBoundingClientRect().left;
-        this.dragOffsetY = e.clientY - cardEl.getBoundingClientRect().top;
-        this.originalParent = cardEl.parentElement;
-        this.originalStyle = {
-            position: cardEl.style.position,
-            left: cardEl.style.left,
-            top: cardEl.style.top,
-            zIndex: cardEl.style.zIndex
-        };
+        this.draggedCard = this.getCardFromSource(source);
+        this.draggedSource = source;
 
-        // 드래그용 스타일 적용
-        cardEl.classList.add('dragging');
-        cardEl.style.position = 'fixed';
-        cardEl.style.left = `${e.clientX - this.dragOffsetX}px`;
-        cardEl.style.top = `${e.clientY - this.dragOffsetY}px`;
-        document.body.appendChild(cardEl);
+        // 드래그용 임시 요소 생성
+        const rect = cardEl.getBoundingClientRect();
+        this.dragOffsetX = e.clientX - rect.left;
+        this.dragOffsetY = e.clientY - rect.top;
+
+        this.dragElement = this.createCardElement(this.draggedCard);
+        this.dragElement.classList.add('dragging');
+        this.dragElement.style.position = 'fixed';
+        this.dragElement.style.left = `${e.clientX - this.dragOffsetX}px`;
+        this.dragElement.style.top = `${e.clientY - this.dragOffsetY}px`;
+        this.dragElement.style.zIndex = '1000';
+        this.dragElement.style.pointerEvents = 'none';
+        document.body.appendChild(this.dragElement);
+
+        // 원본 카드 반투명 처리
+        cardEl.style.opacity = '0.3';
+        this.originalCardEl = cardEl;
 
         this.highlightValidTargets();
+
+        e.preventDefault();
     }
 
     /**
-     * 마우스 이동 핸들러
+     * 부모 요소에서 소스 정보 추출
      */
-    handleMouseMove(e) {
-        if (!this.isDragging || !this.draggedElement) return;
-
-        this.draggedElement.style.left = `${e.clientX - this.dragOffsetX}px`;
-        this.draggedElement.style.top = `${e.clientY - this.dragOffsetY}px`;
-    }
-
-    /**
-     * 마우스 업 핸들러
-     */
-    handleMouseUp(e) {
-        if (!this.isDragging) return;
-
-        this.isDragging = false;
-        this.clearHighlights();
-
-        if (this.draggedElement) {
-            this.draggedElement.classList.remove('dragging');
-            this.draggedElement.classList.remove('selected');
-        }
-
-        // 드롭 대상 찾기
-        const dropTarget = this.findDropTarget(e.clientX, e.clientY);
-
-        if (dropTarget && this.tryMove(this.selectedSource, dropTarget)) {
-            // 이동 성공
-            this.moves++;
-            this.updateMoves();
-            this.updateUI();
-            this.checkWin();
-        } else {
-            // 이동 실패 - 원위치
-            this.updateUI();
-        }
-
-        this.clearSelection();
-    }
-
-    /**
-     * 카드 소스 정보 가져오기
-     */
-    getCardSource(cardEl) {
-        const parent = cardEl.parentElement;
-        if (!parent) return null;
-
+    getCardSourceFromParent(parent, cardEl) {
         if (parent.classList.contains('freecell')) {
             return { type: 'freecell', index: parseInt(parent.dataset.cell) };
         }
@@ -279,6 +245,71 @@ class FreeCell {
             return { type: 'cascade', index: cascadeIndex, cardIndex };
         }
         return null;
+    }
+
+    /**
+     * 마우스 이동 핸들러
+     */
+    handleMouseMove(e) {
+        if (!this.isDragging || !this.dragElement) return;
+
+        this.dragElement.style.left = `${e.clientX - this.dragOffsetX}px`;
+        this.dragElement.style.top = `${e.clientY - this.dragOffsetY}px`;
+    }
+
+    /**
+     * 마우스 업 핸들러
+     */
+    handleMouseUp(e) {
+        if (!this.isDragging) return;
+
+        this.clearHighlights();
+
+        // 드롭 대상 찾기 (스냅 기능 포함)
+        const dropTarget = this.findDropTargetWithSnap(e.clientX, e.clientY);
+
+        if (dropTarget && this.tryMove(this.draggedSource, dropTarget)) {
+            // 이동 성공
+            this.moves++;
+            this.updateMoves();
+            this.checkWin();
+        }
+
+        // 드래그 정리 및 UI 업데이트
+        this.cleanupDrag();
+        this.updateUI();
+    }
+
+    /**
+     * 드래그 취소
+     */
+    cancelDrag() {
+        if (!this.isDragging) return;
+        this.clearHighlights();
+        this.cleanupDrag();
+        this.updateUI();
+    }
+
+    /**
+     * 드래그 정리
+     */
+    cleanupDrag() {
+        // 드래그 요소 제거
+        if (this.dragElement && this.dragElement.parentNode) {
+            this.dragElement.parentNode.removeChild(this.dragElement);
+        }
+
+        // 원본 카드 복원
+        if (this.originalCardEl) {
+            this.originalCardEl.style.opacity = '';
+        }
+
+        // 상태 초기화
+        this.isDragging = false;
+        this.draggedCard = null;
+        this.draggedSource = null;
+        this.dragElement = null;
+        this.originalCardEl = null;
     }
 
     /**
@@ -319,7 +350,7 @@ class FreeCell {
      * 유효한 이동 대상 하이라이트
      */
     highlightValidTargets() {
-        if (!this.selectedCard) return;
+        if (!this.draggedCard) return;
 
         // 프리셀 하이라이트
         document.querySelectorAll('.freecell').forEach((cell, i) => {
@@ -331,14 +362,14 @@ class FreeCell {
         // 파운데이션 하이라이트
         document.querySelectorAll('.foundation').forEach((cell) => {
             const suit = cell.dataset.suit;
-            if (this.canMoveToFoundation(this.selectedCard, suit)) {
+            if (this.canMoveToFoundation(this.draggedCard, suit)) {
                 cell.classList.add('highlight');
             }
         });
 
         // 캐스케이드 하이라이트
         document.querySelectorAll('.cascade').forEach((cascade, i) => {
-            if (this.canMoveToCascade(this.selectedCard, i)) {
+            if (this.canMoveToCascade(this.draggedCard, i)) {
                 cascade.classList.add('highlight');
             }
         });
@@ -352,30 +383,49 @@ class FreeCell {
     }
 
     /**
-     * 선택 해제
+     * 드롭 대상 찾기 (스냅 기능 포함)
      */
-    clearSelection() {
-        this.selectedCard = null;
-        this.selectedSource = null;
-        this.draggedElement = null;
-        document.querySelectorAll('.card.selected').forEach(el => el.classList.remove('selected'));
+    findDropTargetWithSnap(x, y) {
+        // 드래그 요소 임시 숨김
+        if (this.dragElement) {
+            this.dragElement.style.display = 'none';
+        }
+
+        // 먼저 정확한 위치 확인
+        let target = this.getTargetAtPoint(x, y);
+
+        // 정확한 위치에 없으면 주변 검색 (스냅)
+        if (!target) {
+            const snapDistance = 60; // 스냅 거리 (픽셀)
+            const offsets = [
+                [0, 0],
+                [-snapDistance, 0], [snapDistance, 0],
+                [0, -snapDistance], [0, snapDistance],
+                [-snapDistance, -snapDistance], [snapDistance, -snapDistance],
+                [-snapDistance, snapDistance], [snapDistance, snapDistance]
+            ];
+
+            for (const [dx, dy] of offsets) {
+                target = this.getTargetAtPoint(x + dx, y + dy);
+                if (target && this.isValidTarget(target)) {
+                    break;
+                }
+                target = null;
+            }
+        }
+
+        if (this.dragElement) {
+            this.dragElement.style.display = '';
+        }
+
+        return target;
     }
 
     /**
-     * 드롭 대상 찾기
+     * 특정 좌표에서 타겟 찾기
      */
-    findDropTarget(x, y) {
-        // 드래그 요소 임시 숨김
-        if (this.draggedElement) {
-            this.draggedElement.style.display = 'none';
-        }
-
+    getTargetAtPoint(x, y) {
         const element = document.elementFromPoint(x, y);
-
-        if (this.draggedElement) {
-            this.draggedElement.style.display = '';
-        }
-
         if (!element) return null;
 
         // 프리셀
@@ -400,9 +450,28 @@ class FreeCell {
     }
 
     /**
+     * 유효한 이동 대상인지 확인
+     */
+    isValidTarget(target) {
+        if (!this.draggedCard) return false;
+
+        switch (target.type) {
+            case 'freecell':
+                return this.freeCells[target.index] === null;
+            case 'foundation':
+                return this.canMoveToFoundation(this.draggedCard, target.suit);
+            case 'cascade':
+                return this.canMoveToCascade(this.draggedCard, target.index);
+        }
+        return false;
+    }
+
+    /**
      * 이동 시도
      */
     tryMove(source, target) {
+        if (!source || !target) return false;
+
         const card = this.getCardFromSource(source);
         if (!card) return false;
 
