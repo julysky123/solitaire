@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프리셀 (FreeCell)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>프리셀</h1>
+            <div class="game-info">
+                <div class="timer">
+                    <span id="timer">00:00</span>
+                </div>
+                <div class="moves">
+                    이동: <span id="moves">0</span>
+                </div>
+            </div>
+            <div class="game-controls">
+                <button id="newGameBtn">새 게임</button>
+                <button id="undoBtn">실행취소</button>
+                <button id="autoCompleteBtn">자동완성</button>
+            </div>
+        </header>
+
+        <main class="game-board">
+            <!-- 상단 영역: 프리셀 4개 + 파운데이션 4개 -->
+            <div class="top-area">
+                <div class="freecells">
+                    <div class="cell freecell" data-cell="0"></div>
+                    <div class="cell freecell" data-cell="1"></div>
+                    <div class="cell freecell" data-cell="2"></div>
+                    <div class="cell freecell" data-cell="3"></div>
+                </div>
+                <div class="foundations">
+                    <div class="cell foundation" data-foundation="0" data-suit="spades">♠</div>
+                    <div class="cell foundation" data-foundation="1" data-suit="hearts">♥</div>
+                    <div class="cell foundation" data-foundation="2" data-suit="diamonds">♦</div>
+                    <div class="cell foundation" data-foundation="3" data-suit="clubs">♣</div>
+                </div>
+            </div>
+
+            <!-- 하단 영역: 캐스케이드 8개 -->
+            <div class="cascades">
+                <div class="cascade" data-cascade="0"></div>
+                <div class="cascade" data-cascade="1"></div>
+                <div class="cascade" data-cascade="2"></div>
+                <div class="cascade" data-cascade="3"></div>
+                <div class="cascade" data-cascade="4"></div>
+                <div class="cascade" data-cascade="5"></div>
+                <div class="cascade" data-cascade="6"></div>
+                <div class="cascade" data-cascade="7"></div>
+            </div>
+        </main>
+
+        <!-- 승리 모달 -->
+        <div id="winModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>축하합니다!</h2>
+                <p>게임을 클리어했습니다!</p>
+                <p>시간: <span id="finalTime"></span></p>
+                <p>이동 횟수: <span id="finalMoves"></span></p>
+                <button id="playAgainBtn">다시 하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
