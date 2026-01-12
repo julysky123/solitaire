@@ -119,6 +119,45 @@ EOF
 )"
 ```
 
+## 4. PR 생성 후 자동 리뷰 실행 (필수)
+
+PR 생성 후 **반드시** 백그라운드에서 PR Reviewer를 실행합니다.
+
+```
+Task tool 사용:
+- subagent_type: "general-purpose"
+- run_in_background: true
+- prompt: "PR #{PR번호} 리뷰를 수행해주세요. 리뷰 기준: 코드 품질, 문서화, 버그 가능성, 보안. gh pr diff로 변경사항 확인 후 gh pr comment로 리뷰 결과를 남겨주세요. 표준 리뷰 형식(## Review: Approved 또는 ## Review: Changes Requested)을 사용하세요."
+```
+
+### 자동 리뷰 실행 예시
+
+PR을 생성하고 URL을 받은 후:
+
+```javascript
+// Task tool 호출
+{
+  "subagent_type": "general-purpose",
+  "run_in_background": true,
+  "description": "PR 자동 리뷰",
+  "prompt": `
+    PR #${prNumber} 리뷰를 수행해주세요.
+
+    1. gh pr diff ${prNumber}로 변경사항 확인
+    2. 리뷰 기준에 따라 검토:
+       - 코드 품질 (명확성, 복잡성, 중복)
+       - 문서화 (주석, docstring)
+       - 버그 가능성 (엣지 케이스, 에러 처리)
+       - 보안 (XSS, 인젝션 등)
+    3. gh pr comment ${prNumber}로 리뷰 결과 작성
+
+    리뷰 형식:
+    - 승인: ## Review: Approved
+    - 변경요청: ## Review: Changes Requested
+  `
+}
+```
+
 ## 체크리스트
 
 - [ ] PR 제목이 규칙에 맞는가?
@@ -126,9 +165,11 @@ EOF
 - [ ] 변경된 파일 목록이 정확한가?
 - [ ] Test Plan이 작성되었는가?
 - [ ] PR URL을 사용자에게 전달했는가?
+- [ ] **자동 리뷰가 백그라운드에서 실행되었는가?**
 
 ## 주의사항
 
 - **merge 금지** - PR 생성까지만, merge는 항상 사람이 직접
 - **base 브랜치 확인** - 기본적으로 master/main으로 PR 생성
 - **PR 생성 실패 시** - 에러 메시지 확인 후 사용자에게 보고
+- **자동 리뷰 필수** - PR 생성 후 반드시 백그라운드 리뷰 실행

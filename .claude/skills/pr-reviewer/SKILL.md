@@ -111,12 +111,39 @@ LGTM! 코드 리뷰 완료.
 *Review by Claude Code (PR Reviewer Agent)*
 ```
 
-## Polling 모드 (Background 실행)
+## Background 실행 (dev-workflow 연동)
+
+dev-workflow에서 PR 생성 후 자동으로 호출됩니다.
+
+### 호출 방법
+
+```
+Task tool 사용:
+- subagent_type: "general-purpose"
+- run_in_background: true
+- description: "PR 자동 리뷰"
+- prompt: "PR #{번호} 리뷰 수행. gh pr diff로 확인 후 gh pr comment로 결과 작성"
+```
+
+### 실행 흐름
+
+```
+┌─────────────────────────────────────────────────┐
+│  dev-workflow                                    │
+│  ├── 1~7단계: 개발, 테스트, 커밋               │
+│  ├── 8단계: PR 생성                             │
+│  │   └── Task(background) → PR Reviewer 실행   │
+│  └── 9단계: 리뷰 대응 (리뷰 결과 확인 후 수정) │
+└─────────────────────────────────────────────────┘
+```
+
+### Polling 모드 (선택적)
+
+여러 PR을 지속 감시할 때 사용:
 
 ```
 ┌─────────────────────────────────────────────────┐
 │  1. 시작 시 60초 대기 (PR 생성 대기)            │
-│                                                 │
 │  2. Loop (최대 10회):                           │
 │     a. gh pr list --state open 확인             │
 │     b. PR 있으면 → diff 확인 → 리뷰 제출        │
@@ -125,7 +152,7 @@ LGTM! 코드 리뷰 완료.
 └─────────────────────────────────────────────────┘
 ```
 
-### Polling 코드 예시
+### 유틸리티 명령어
 
 ```bash
 # PR 상태 확인

@@ -26,12 +26,17 @@ Types: feat, fix, refactor, docs, test, chore
 
 ```
 new_service1/
+├── index.html            # 게임 선택 화면 (진입점)
 ├── .claude/
 │   └── skills/           # Claude Code skills
 │       ├── dev-workflow/ # 개발 워크플로우 자동화
 │       ├── pr-reviewer/  # PR 리뷰 자동화
 │       └── hello-world/  # 예제 skill
 ├── freecell/             # 프리셀 게임 (Vanilla JS)
+│   ├── index.html
+│   ├── style.css
+│   └── game.js
+├── klondike/             # 클론다이크 게임 (Vanilla JS)
 │   ├── index.html
 │   ├── style.css
 │   └── game.js
@@ -57,7 +62,18 @@ GitHub PR 자동 리뷰:
 - 코드 품질, 문서화, 버그 가능성, 보안 검토
 - 표준 형식으로 리뷰 코멘트 작성
 
-## FreeCell Game Features
+## Games
+
+### 게임 선택 화면 (index.html)
+- 프리셀 / 클론다이크 선택 가능
+- 카드 형태 UI, 호버 애니메이션
+
+### FreeCell (freecell/)
 - 드래그 앤 드롭 (60px 스냅 기능)
 - 슈퍼무브: (빈 프리셀 + 1) × (빈 캐스케이드 + 1)장 동시 이동
 - 실행취소, 자동완성, 타이머
+
+### Klondike (klondike/)
+- 7열 테이블로 (피라미드 배치)
+- 스톡/웨이스트 (덱 넘기기)
+- 드래그 앤 드롭, 실행취소, 타이머

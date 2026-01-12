@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>솔리테어 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a5c1a 0%, #0d3d0d 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 50px;
+        }
+
+        .game-list {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .game-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            width: 280px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .game-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .game-card p {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .card-preview {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .mini-card {
+            width: 35px;
+            height: 50px;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .mini-card.red {
+            color: #d32f2f;
+        }
+
+        .mini-card.black {
+            color: #212121;
+        }
+
+        footer {
+            margin-top: 60px;
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>솔리테어</h1>
+        <p class="subtitle">플레이할 게임을 선택하세요</p>
+
+        <div class="game-list">
+            <a href="freecell/index.html" class="game-card">
+                <div class="game-icon">🃏</div>
+                <h2>프리셀</h2>
+                <p>4개의 프리셀을 활용해 모든 카드를 파운데이션으로 옮기세요. 전략적 사고가 필요한 게임입니다.</p>
+                <div class="card-preview">
+                    <div class="mini-card red">♥</div>
+                    <div class="mini-card black">♠</div>
+                    <div class="mini-card red">♦</div>
+                    <div class="mini-card black">♣</div>
+                </div>
+            </a>
+
+            <a href="klondike/index.html" class="game-card">
+                <div class="game-icon">🎴</div>
+                <h2>클론다이크</h2>
+                <p>가장 클래식한 솔리테어! 덱에서 카드를 뽑아 7개 열에서 K부터 A까지 쌓아 정리하세요.</p>
+                <div class="card-preview">
+                    <div class="mini-card black">K</div>
+                    <div class="mini-card red">Q</div>
+                    <div class="mini-card black">J</div>
+                    <div class="mini-card red">10</div>
+                </div>
+            </a>
+        </div>
+
+        <footer>
+            <p>Solitaire Collection</p>
+        </footer>
+    </div>
+</body>
+</html>
